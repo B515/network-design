@@ -1,0 +1,26 @@
+客户端→服务端：
+	登录（首次连接）：
+		{
+		'nick':'name'
+		}
+	发送消息：
+		{
+		'Object':'all'  # 发送对象类型：all（群体）， personal（个人）	
+		'ToUser':'name'  # 接收方姓名：群发不填，私聊必填
+		'FromUser':'name'  # 发送方姓名；必填
+		'CreateTime':'hh:mm:ss'  # 消息创建时间：形如23:59:59
+		'MsgType':'text' # 消息类型：text（纯文本）
+		'Content':'content' # 文本内容
+		}
+	
+服务端→客户端：
+	发送消息：
+		{
+		'Object':'all'  # 发送对象类型：all（群体）， personal（个人）	
+		'ToUser':'name'  # 接收方姓名
+		'FromUser':'name'  # 发送方姓名：如果是系统消息，为system
+		'CreateTime':'hh:mm:ss'  # 消息创建时间：形如23:59:59
+		'MsgType':'text' # 消息类型：text（纯文本）
+		'Content':'content' # 文本内容
+		'OnlineUser':[name1, name2,...] # 在线用户
+		}
