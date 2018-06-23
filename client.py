@@ -10,8 +10,8 @@ inString = ''
 nick = ''
 encoding = 'utf-8'
 # ip = "123.207.164.148"  # 正式服务器
-ip = "123.206.13.211"  # 测试服务器
-# ip = "127.0.0.1"
+# ip = "123.206.13.211"  # 测试服务器
+ip = "127.0.0.1"
 PORT = 8964
 
 
@@ -20,7 +20,7 @@ def deal_out(sock):
     while True:
         content = input()
         outString = content
-        msg = {'Object': 'all', 'FromUser': 'nick', 'CreateTime': time.strftime("%H:%M:%S", time.localtime()),
+        msg = {'Object': 'all', 'FromUser': nick, 'CreateTime': time.strftime("%H:%M:%S", time.localtime()),
                'MsgType': 'text', 'Content': content}
         jmsg = json.dumps(msg)
         sock.send(jmsg.encode(encoding))
