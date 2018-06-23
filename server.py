@@ -57,7 +57,7 @@ def notify_all(msg):
             data[user].append(temp)
 
 
-HOST = "127.0.0.1"
+HOST = ""
 PORT = 8964
 data = defaultdict(list)
 encoding = 'utf-8'
