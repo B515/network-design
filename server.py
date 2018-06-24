@@ -115,7 +115,7 @@ def deal_file_out(conn, msg_id, msg_type):
             'MsgID': msg_id,  # 本次传输id，8位数字，需与首次发送id相同
             'Content': data  # 图片\文件内容，每次最大传输960
         }
-        jmsg = json.dumps(msg)
+        jmsg = json.dumps(msg) + '\n'
         conn.send(jmsg.encode(encoding))
         time.sleep(0.05)
     fp.close()
