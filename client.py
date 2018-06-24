@@ -21,13 +21,6 @@ ip = "123.206.13.211"  # 测试服务器
 PORT = 8964
 
 
-class BytesEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, bytes):
-            return str(obj, encoding='utf-8')
-        return json.JSONEncoder.default(self, obj)
-
-
 def deal_out(sock):
     global nick, outString
     while True:
