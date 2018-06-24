@@ -1,0 +1,61 @@
+客户端→服务端：
+	登录（首次连接）：
+		{
+		'nick':'name'
+		}
+	发送消息：
+		{
+		'Object':'all',  # 发送对象类型：all（群体）， personal（个人）	
+		'ToUser':'name',  # 接收方姓名：群发不填，私聊必填
+		'FromUser':'name',  # 发送方姓名；必填
+		'CreateTime':'hh:mm:ss',  # 消息创建时间：形如23:59:59
+		'MsgType':'text', # 消息类型：text（纯文本）
+		'Content':'content' # 文本内容
+		}
+	发送图片\文件（需要进行多次传输，第一次传文件信息，之后传文件数据）：
+	    首次发送：
+		{
+		'Object':'all',  # 发送对象类型：all（群体）， personal（个人）	
+		'ToUser':'name',  # 接收方姓名：群发不填，私聊必填
+		'FromUser':'name',  # 发送方姓名；必填
+		'CreateTime':'hh:mm:ss',  # 消息创建时间：形如23:59:59
+		'MsgType':'image',  # 消息类型：image（图片）、file（文件）
+		'FileName':'一脸懵逼.jpg',  # 图片\文件名
+		'FileSize':960,  # 图片\文件大小
+		'MsgID':12345678  # 本次传输id，随机8位数字，用于标记本次传输
+		}
+	    后续发送：
+	    {
+		'MsgType':'image',  # 消息类型：image（图片）、file（文件）
+		'MsgID':12345678,  # 本次传输id，8位数字，需与首次发送id相同
+		'Content':'',  # 图片\文件内容，每次最大传输512
+		}
+服务端→客户端：
+	发送消息：
+		{
+		'Object':'all'  # 发送对象类型：all（群体）， personal（个人）	
+		'ToUser':'name'  # 接收方姓名
+		'FromUser':'name'  # 发送方姓名：如果是系统消息，为system
+		'CreateTime':'hh:mm:ss'  # 消息创建时间：形如23:59:59
+		'MsgType':'text' # 消息类型：text（纯文本）
+		'Content':'content' # 文本内容
+		'OnlineUser':[name1, name2,...] # 在线用户
+		}
+	发送图片\文件（需要进行多次传输，第一次传文件信息，之后传文件数据）：
+	    首次发送：
+		{
+		'Object':'all',  # 发送对象类型：all（群体）， personal（个人）	
+		'ToUser':'name',  # 接收方姓名：群发不填，私聊必填
+		'FromUser':'name',  # 发送方姓名；必填
+		'CreateTime':'hh:mm:ss',  # 消息创建时间：形如23:59:59
+		'MsgType':'image',  # 消息类型：image（图片）、file（文件）
+		'OnlineUser':[name1, name2,...] # 在线用户
+		'FileName':'一脸懵逼.jpg',  # 图片\文件名
+		'FileSize':960,  # 图片\文件大小
+		'MsgID':12345678  # 本次传输id，随机8位数字，用于标记本次传输
+		}
+	    后续发送：
+	    {
+		'MsgType':'image',  # 消息类型：image（图片）、file（文件）
+		'MsgID':12345678,  # 本次传输id，8位数字，需与首次发送id相同
+		'Content':'',  # 图片\文件内容，每次最大传输512
