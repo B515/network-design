@@ -59,7 +59,7 @@ def client_thread_out(conn, nick):
                 except:
                     return
             elif msg['MsgType'] == 'image' or msg['MsgType'] == 'file':
-                jmsg = json.dumps(msg)
+                jmsg = json.dumps(msg) + '\n'
                 try:
                     conn.send(jmsg.encode(encoding))
                     threading.Thread(target=deal_file_out, args=(conn, msg['MsgID'], msg['MsgType'])).start()
