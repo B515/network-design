@@ -38,7 +38,7 @@ def deal_out(sock):
                 'Object': 'all',  # 发送对象类型：all（群体）， personal（个人）
                 'FromUser': nick,  # 发送方姓名；必填
                 'CreateTime': time.strftime("%H:%M:%S", time.localtime()),  # 消息创建时间：形如23:59:59
-                'MsgType': 'image',  # 消息类型：image（图片）、file（文件）
+                'MsgType': 'image' if cmd == '1' else 'file',  # 消息类型：image（图片）、file（文件）
                 'FileName': filename,  # 图片\文件名
                 'FileSize': os.stat(filename).st_size,  # 图片\文件大小
                 'MsgID': randint(10000000, 99999999)  # 本次传输id，随机8位数字，用于标记本次传输
