@@ -5,6 +5,7 @@ import threading
 import json
 import time
 import os
+import struct
 from collections import defaultdict
 from base64 import b64encode, b64decode
 
@@ -13,10 +14,12 @@ def client_thread_in(conn, nick):
     global data, online_user
     while True:
         try:
-            jmsg = conn.recv(1024).decode(encoding)
-            if not jmsg:
+            length_struct = conn.recv(4)
+            if not length_struct:
                 conn.close()
                 return
+            length = struct.unpack("i", length_struct)[0]
+            jmsg = conn.recv(length).decode(encoding)
             msg = json.loads(jmsg)
             if msg['MsgType'] == 'text':
                 print('[' + msg['CreateTime'] + ']' + msg['FromUser'] + ':' + msg['Content'])
@@ -51,21 +54,23 @@ def client_thread_out(conn, nick):
             msg['OnlineUser'] = list(online_user.keys())
             if msg['MsgType'] == 'text':
                 jmsg = json.dumps(msg) + '\n'
+                jmsg_bytes = jmsg.encode(encoding)
                 try:
-                    conn.send(jmsg.encode(encoding))
-                    threadLock.acquire()
+                    length = len(jmsg_bytes)
+                    conn.send(struct.pack("i", length))
+                    conn.send(jmsg_bytes)
                     data[nick].pop(0)
-                    threadLock.release()
                 except:
                     return
             elif msg['MsgType'] == 'image' or msg['MsgType'] == 'file':
                 jmsg = json.dumps(msg) + '\n'
+                jmsg_bytes = jmsg.encode(encoding)
                 try:
-                    conn.send(jmsg.encode(encoding))
+                    length = len(jmsg_bytes)
+                    conn.send(struct.pack("i", length))
+                    conn.send(jmsg_bytes)
                     threading.Thread(target=deal_file_out, args=(conn, msg['MsgID'], msg['MsgType'])).start()
-                    threadLock.acquire()
                     data[nick].pop(0)
-                    threadLock.release()
                 except:
                     return
 
@@ -81,6 +86,7 @@ def notify_all(msg):
 
 def deal_file(f_id, f_size):
     global temp_file, data_file, data
+    print("创建" + str(f_id) + "文件接受线程")
     recv_size = 0
     filename = os.path.join('./temp/', str(f_id))
     fp = open(filename, 'wb')
@@ -100,10 +106,12 @@ def deal_file(f_id, f_size):
         data[temp_file[f_id]['ToUser']].append(temp_file[f_id])
     del temp_file[f_id]
     del data_file[f_id]
+    print("结束" + str(f_id) + "文件接受线程")
     return
 
 
 def deal_file_out(conn, msg_id, msg_type):
+    print("创建" + str(msg_id) + "文件发送线程")
     fp = open("./temp/" + str(msg_id), "rb")
     while True:
         data = b64encode(fp.read(512)).decode(encoding)
@@ -113,12 +121,15 @@ def deal_file_out(conn, msg_id, msg_type):
         msg = {
             'MsgType': msg_type,  # 消息类型：image（图片）、file（文件）
             'MsgID': msg_id,  # 本次传输id，8位数字，需与首次发送id相同
-            'Content': data  # 图片\文件内容，每次最大传输960
+            'Content': data  # 图片\文件内容，每次最大传输512
         }
         jmsg = json.dumps(msg) + '\n'
-        conn.send(jmsg.encode(encoding))
-        time.sleep(0.05)
+        jmsg_bytes = jmsg.encode(encoding)
+        length = len(jmsg_bytes)
+        conn.send(struct.pack("i", length))
+        conn.send(jmsg_bytes)
     fp.close()
+    print("结束" + str(msg_id) + "文件发送线程")
     return
 
 
@@ -142,7 +153,9 @@ while True:
     conn, addr = s.accept()
     print(addr[0] + ':' + str(addr[1]) + " 连入服务器")
     try:
-        jnick = conn.recv(1024).decode(encoding)
+        length_struct = conn.recv(4)
+        length = struct.unpack("i", length_struct)[0]
+        jnick = conn.recv(length).decode(encoding)
         nick = json.loads(jnick)['nick']
     except:
         continue
@@ -154,6 +167,6 @@ while True:
             'Content': '欢迎 ' + nick + ' 进入聊天室！', 'OnlineUser': list(online_user.keys())}
     print(temp['Content'])
     notify_all(temp)
-    print('当前 ' + str(int((threading.activeCount() + 1) / 2)) + ' 人在线')
+    print('当前 ' + str(len(online_user.keys())) + ' 人在线')
     threading.Thread(target=client_thread_in, args=(conn, nick)).start()
     threading.Thread(target=client_thread_out, args=(conn, nick)).start()
