@@ -30,7 +30,7 @@ def deal_out(sock):
             outString = content
             msg = {'Object': 'all', 'FromUser': nick, 'CreateTime': time.strftime("%H:%M:%S", time.localtime()),
                    'MsgType': 'text', 'Content': content}
-            jmsg = json.dumps(msg)
+            jmsg = json.dumps(msg) + '\n'
             sock.send(jmsg.encode(encoding))
         elif cmd == '1' or cmd == '2':
             filename = input("请输入文件名：")
@@ -43,7 +43,7 @@ def deal_out(sock):
                 'FileSize': os.stat(filename).st_size,  # 图片\文件大小
                 'MsgID': randint(10000000, 99999999)  # 本次传输id，随机8位数字，用于标记本次传输
             }
-            jmsg = json.dumps(msg)
+            jmsg = json.dumps(msg) + '\n'
             sock.send(jmsg.encode(encoding))
             threading.Thread(target=deal_file, args=(sock, msg['MsgType'], msg['MsgID'], filename)).start()
 
@@ -85,7 +85,7 @@ def deal_file(sock, msg_type, f_id, filename):
             'MsgID': f_id,  # 本次传输id，8位数字，需与首次发送id相同
             'Content': data  # 图片\文件内容，每次最大传输960
         }
-        jmsg = json.dumps(msg)
+        jmsg = json.dumps(msg) + '\n'
         sock.send(jmsg.encode(encoding))
     fp.close()
     return
@@ -118,7 +118,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((ip, PORT))
 print('成功连入服务器(' + ip + ')')
 login = {'nick': nick}
-jlogin = json.dumps(login)
+jlogin = json.dumps(login) + '\n'
 sock.send(jlogin.encode(encoding))
 
 thin = threading.Thread(target=deal_in, args=(sock,))
