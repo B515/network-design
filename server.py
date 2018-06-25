@@ -5,21 +5,19 @@ import threading
 import json
 import time
 import os
-import struct
 from collections import defaultdict
 from base64 import b64encode, b64decode
 
 
 def client_thread_in(conn, nick):
     global data, online_user
+    cf = conn.makefile('r', encoding=encoding)
     while True:
         try:
-            length_struct = conn.recv(4)
-            if not length_struct:
+            jmsg = cf.readline()
+            if not jmsg:
                 conn.close()
                 return
-            length = struct.unpack("i", length_struct)[0]
-            jmsg = conn.recv(length).decode(encoding)
             msg = json.loads(jmsg)
             if msg['MsgType'] == 'text':
                 print('[' + msg['CreateTime'] + ']' + msg['FromUser'] + ':' + msg['Content'])
@@ -54,21 +52,15 @@ def client_thread_out(conn, nick):
             msg['OnlineUser'] = list(online_user.keys())
             if msg['MsgType'] == 'text':
                 jmsg = json.dumps(msg) + '\n'
-                jmsg_bytes = jmsg.encode(encoding)
                 try:
-                    length = len(jmsg_bytes)
-                    conn.send(struct.pack("i", length))
-                    conn.send(jmsg_bytes)
+                    conn.send(jmsg.encode(encoding))
                     data[nick].pop(0)
                 except:
                     return
             elif msg['MsgType'] == 'image' or msg['MsgType'] == 'file':
                 jmsg = json.dumps(msg) + '\n'
-                jmsg_bytes = jmsg.encode(encoding)
                 try:
-                    length = len(jmsg_bytes)
-                    conn.send(struct.pack("i", length))
-                    conn.send(jmsg_bytes)
+                    conn.send(jmsg.encode(encoding))
                     threading.Thread(target=deal_file_out, args=(conn, msg['MsgID'], msg['MsgType'])).start()
                     data[nick].pop(0)
                 except:
@@ -93,7 +85,7 @@ def deal_file(f_id, f_size):
     while not recv_size == f_size:
         if len(data_file[f_id]) > 0:
             temp = b64decode(data_file[f_id][0]['Content'])
-            if f_size - recv_size > 512:
+            if f_size - recv_size > 8192:
                 recv_size += len(temp)
             else:
                 recv_size = f_size
@@ -114,20 +106,17 @@ def deal_file_out(conn, msg_id, msg_type):
     print("创建" + str(msg_id) + "文件发送线程")
     fp = open("./temp/" + str(msg_id), "rb")
     while True:
-        data = b64encode(fp.read(512)).decode(encoding)
+        data = b64encode(fp.read(8192)).decode(encoding)
         if not data:
             print("发送完毕")
             break
         msg = {
             'MsgType': msg_type,  # 消息类型：image（图片）、file（文件）
             'MsgID': msg_id,  # 本次传输id，8位数字，需与首次发送id相同
-            'Content': data  # 图片\文件内容，每次最大传输512
+            'Content': data  # 图片\文件内容，每次最大传输8192
         }
         jmsg = json.dumps(msg) + '\n'
-        jmsg_bytes = jmsg.encode(encoding)
-        length = len(jmsg_bytes)
-        conn.send(struct.pack("i", length))
-        conn.send(jmsg_bytes)
+        conn.send(jmsg.encode(encoding))
     fp.close()
     print("结束" + str(msg_id) + "文件发送线程")
     return
@@ -152,10 +141,9 @@ print('开始监听端口')
 while True:
     conn, addr = s.accept()
     print(addr[0] + ':' + str(addr[1]) + " 连入服务器")
+    cf = conn.makefile('r', encoding=encoding)
     try:
-        length_struct = conn.recv(4)
-        length = struct.unpack("i", length_struct)[0]
-        jnick = conn.recv(length).decode(encoding)
+        jnick = cf.readline()
         nick = json.loads(jnick)['nick']
     except:
         continue

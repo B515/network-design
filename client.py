@@ -5,7 +5,6 @@ import threading
 import json
 import time
 import os
-import struct
 from base64 import b64encode, b64decode
 from collections import defaultdict
 from random import randint
@@ -32,10 +31,7 @@ def deal_out(sock):
             msg = {'Object': 'all', 'FromUser': nick, 'CreateTime': time.strftime("%H:%M:%S", time.localtime()),
                    'MsgType': 'text', 'Content': content}
             jmsg = json.dumps(msg)
-            jmsg_bytes = jmsg.encode(encoding)
-            length = len(jmsg_bytes)
-            sock.send(struct.pack("i", length))
-            sock.send(jmsg_bytes)
+            sock.send(jmsg.encode(encoding))
         elif cmd == '1' or cmd == '2':
             filename = input("请输入文件名：")
             msg = {
@@ -48,22 +44,18 @@ def deal_out(sock):
                 'MsgID': randint(10000000, 99999999)  # 本次传输id，随机8位数字，用于标记本次传输
             }
             jmsg = json.dumps(msg)
-            jmsg_bytes = jmsg.encode(encoding)
-            length = len(jmsg_bytes)
-            sock.send(struct.pack("i", length))
-            sock.send(jmsg_bytes)
+            sock.send(jmsg.encode(encoding))
             threading.Thread(target=deal_file, args=(sock, msg['MsgType'], msg['MsgID'], filename)).start()
 
 
 def deal_in(sock):
     global inString
+    cf = sock.makefile('r', encoding=encoding)
     while True:
         try:
-            length_struct = sock.recv(4)
-            if not length_struct:
+            jmsg = cf.readline()
+            if not jmsg:
                 break
-            length = struct.unpack("i", length_struct)[0]
-            jmsg = sock.recv(length).decode(encoding)
             msg = json.loads(jmsg)
             if msg['MsgType'] == 'text':
                 inString = msg['Content']
@@ -84,7 +76,7 @@ def deal_file(sock, msg_type, f_id, filename):
     print("开始发送" + filename)
     fp = open(filename, 'rb')
     while True:
-        data = b64encode(fp.read(512)).decode(encoding)
+        data = b64encode(fp.read(8192)).decode(encoding)
         if not data:
             print("发送" + filename + "完毕")
             break
@@ -94,10 +86,7 @@ def deal_file(sock, msg_type, f_id, filename):
             'Content': data  # 图片\文件内容，每次最大传输960
         }
         jmsg = json.dumps(msg)
-        jmsg_bytes = jmsg.encode(encoding)
-        length = len(jmsg_bytes)
-        sock.send(struct.pack("i", length))
-        sock.send(jmsg_bytes)
+        sock.send(jmsg.encode(encoding))
     fp.close()
     return
 
@@ -111,7 +100,7 @@ def deal_file_in(msg):
     while not recv_size == msg['FileSize']:
         if len(data_file[msg['MsgID']]) > 0:
             temp = b64decode(data_file[msg['MsgID']][0]['Content'])
-            if msg['FileSize'] - recv_size > 512:
+            if msg['FileSize'] - recv_size > 8192:
                 recv_size += len(temp)
             else:
                 recv_size = msg['FileSize']
@@ -130,10 +119,7 @@ sock.connect((ip, PORT))
 print('成功连入服务器(' + ip + ')')
 login = {'nick': nick}
 jlogin = json.dumps(login)
-jlogin_bytes = jlogin.encode(encoding)
-length = len(jlogin_bytes)
-sock.send(struct.pack("i", length))
-sock.send(jlogin_bytes)
+sock.send(jlogin.encode(encoding))
 
 thin = threading.Thread(target=deal_in, args=(sock,))
 thin.start()
