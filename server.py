@@ -5,6 +5,8 @@ import threading
 import json
 import time
 import os
+import hashlib
+from user_data_manager import UserDataManager
 from collections import defaultdict
 from base64 import b64encode, b64decode
 
@@ -130,7 +132,6 @@ temp_file = defaultdict(dict)  # 临时存储文件
 encoding = 'utf-8'
 online_user = {}  # { nick:{ ip:'', port:''}}
 
-threadLock = threading.Lock()
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print('Socke建立')
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -143,8 +144,37 @@ while True:
     print(addr[0] + ':' + str(addr[1]) + " 连入服务器")
     cf = conn.makefile('r', encoding=encoding)
     try:
-        jnick = cf.readline()
-        nick = json.loads(jnick)['nick']
+        jmsg = cf.readline()
+        msg = json.loads(jmsg)
+        password_sha1 = hashlib.sha1(msg['password'].encode(encoding)).hexdigest()
+        if msg['op'] == 'register':
+            result = UserDataManager().register(msg['username'], password_sha1, msg['nickname'])
+            if result == 2:
+                nick = msg['nickname']
+                temp = {'result': result}
+            else:
+                temp = {'result': result}
+                jtemp = json.dumps(temp) + '\n'
+                conn.send(jtemp.encode(encoding))
+                continue
+            jtemp = json.dumps(temp) + '\n'
+            conn.send(jtemp.encode(encoding))
+        elif msg['op'] == 'login':
+            result = UserDataManager().login(msg['username'])
+            if result == 1:
+                temp = {'result': result}
+                continue
+            else:
+                if password_sha1 == result[0][1]:
+                    nick = result[0][2]
+                    temp = {'result': 0}
+                else:
+                    temp = {'result': 1}
+                    jtemp = json.dumps(temp) + '\n'
+                    conn.send(jtemp.encode(encoding))
+                    continue
+            jtemp = json.dumps(temp) + '\n'
+            conn.send(jtemp.encode(encoding))
     except:
         continue
     online_user[nick] = {}

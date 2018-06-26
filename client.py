@@ -24,7 +24,7 @@ PORT = 8964
 def deal_out(sock):
     global nick, outString
     while True:
-        cmd = input("请输入类型{0：文字，1：图片， 2：文件}")
+        cmd = input("请输入类型{0：文字，1：图片， 2：文件}：")
         if cmd == '0':
             content = input()
             outString = content
@@ -113,13 +113,35 @@ def deal_file_in(msg):
     return
 
 
-nick = input('请输入昵称：')
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((ip, PORT))
-print('成功连入服务器(' + ip + ')')
-login = {'nick': nick}
-jlogin = json.dumps(login) + '\n'
-sock.send(jlogin.encode(encoding))
+while True:
+    op = input("请输入操作{0：登录，1：注册}：")
+    username = input("请输入用户名：")
+    password = input("请输入密码：")
+    data = {'op': 'register' if op == '1' else 'login', 'username': username, 'password': password, }
+    if op == '1':
+        nickname = input("请输入昵称：")
+        data['nickname'] = nickname
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((ip, PORT))
+    print('成功连入服务器(' + ip + ')')
+    jdata = json.dumps(data) + '\n'
+    sock.send(jdata.encode(encoding))
+
+    jresult = sock.recv(20)
+    result = json.loads(jresult)
+
+    if result['result'] == 0:
+        print("登录成功")
+        break
+    elif result['result'] == 2:
+        print("注册成功")
+        break
+    elif result['result'] == 1:
+        print("用户名或密码错误")
+        continue
+    elif result['result'] == 3:
+        print("用户名重复")
+        continue
 
 thin = threading.Thread(target=deal_in, args=(sock,))
 thin.start()
