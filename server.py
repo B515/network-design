@@ -40,6 +40,7 @@ def client_thread_in(conn, nick):
                     'CreateTime': time.strftime("%H:%M:%S", time.localtime()), 'MsgType': 'text',
                     'Content': nick + ' 离开聊天室', 'OnlineUser': list(online_user.keys())}
             print(temp['Content'])
+            print('当前 ' + str(len(online_user.keys())) + ' 人在线')
             notify_all(temp)
             return
 
@@ -150,7 +151,7 @@ while True:
         if msg['op'] == 'register':
             result = UserDataManager().register(msg['username'], password_sha1, msg['nickname'])
             if result == 2:
-                nick = msg['nickname']
+                username = msg['username']
                 temp = {'result': result}
             else:
                 temp = {'result': result}
@@ -163,12 +164,15 @@ while True:
             result = UserDataManager().login(msg['username'])
             if result == 1:
                 temp = {'result': result}
+                jtemp = json.dumps(temp) + '\n'
+                conn.send(jtemp.encode(encoding))
                 continue
             else:
                 if password_sha1 == result[0][1]:
-                    nick = result[0][2]
+                    username = result[0][0]
                     temp = {'result': 0}
                 else:
+                    print("密码错误")
                     temp = {'result': 1}
                     jtemp = json.dumps(temp) + '\n'
                     conn.send(jtemp.encode(encoding))
@@ -177,14 +181,14 @@ while True:
             conn.send(jtemp.encode(encoding))
     except:
         continue
-    online_user[nick] = {}
-    online_user[nick]['ip'] = addr[0]
-    online_user[nick]['port'] = addr[1]
+    online_user[username] = {}
+    online_user[username]['ip'] = addr[0]
+    online_user[username]['port'] = addr[1]
     temp = {'Object': 'all', 'FromUser': 'system', 'ToUser': list(online_user.keys()),
             'CreateTime': time.strftime("%H:%M:%S", time.localtime()), 'MsgType': 'text',
-            'Content': '欢迎 ' + nick + ' 进入聊天室！', 'OnlineUser': list(online_user.keys())}
+            'Content': '欢迎 ' + username + ' 进入聊天室！', 'OnlineUser': list(online_user.keys())}
     print(temp['Content'])
     notify_all(temp)
     print('当前 ' + str(len(online_user.keys())) + ' 人在线')
-    threading.Thread(target=client_thread_in, args=(conn, nick)).start()
-    threading.Thread(target=client_thread_out, args=(conn, nick)).start()
+    threading.Thread(target=client_thread_in, args=(conn, username)).start()
+    threading.Thread(target=client_thread_out, args=(conn, username)).start()

@@ -4,7 +4,6 @@ import pymysql
 class UserDataManager:
     def __init__(self):
         self.db = pymysql.connect("localhost", "root", "19970821", "recipie")
-        print("连接数据库")
         self.cursor = self.db.cursor()
 
     def __del__(self):
@@ -40,8 +39,11 @@ class UserDataManager:
         try:
             self.cursor.execute(cmd)
             results = self.cursor.fetchall()
-            print(results)
-            return results
+            if len(results) == 0:
+                print(username + "用户名不存在")
+                return 1
+            else:
+                return results
         except:
             print(username + "用户名不存在")
             return 1

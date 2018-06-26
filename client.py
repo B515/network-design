@@ -12,6 +12,7 @@ from random import randint
 outString = ''
 inString = ''
 nick = ''
+username = ''
 data_file = defaultdict(list)  # 待处理文件消息
 temp_file = defaultdict(dict)  # 临时存储文件
 encoding = 'utf-8'
@@ -22,13 +23,13 @@ PORT = 8964
 
 
 def deal_out(sock):
-    global nick, outString
+    global username, outString
     while True:
         cmd = input("请输入类型{0：文字，1：图片， 2：文件}：")
         if cmd == '0':
             content = input()
             outString = content
-            msg = {'Object': 'all', 'FromUser': nick, 'CreateTime': time.strftime("%H:%M:%S", time.localtime()),
+            msg = {'Object': 'all', 'FromUser': username, 'CreateTime': time.strftime("%H:%M:%S", time.localtime()),
                    'MsgType': 'text', 'Content': content}
             jmsg = json.dumps(msg) + '\n'
             sock.send(jmsg.encode(encoding))
@@ -36,7 +37,7 @@ def deal_out(sock):
             filename = input("请输入文件名：")
             msg = {
                 'Object': 'all',  # 发送对象类型：all（群体）， personal（个人）
-                'FromUser': nick,  # 发送方姓名；必填
+                'FromUser': username,  # 发送方姓名；必填
                 'CreateTime': time.strftime("%H:%M:%S", time.localtime()),  # 消息创建时间：形如23:59:59
                 'MsgType': 'image' if cmd == '1' else 'file',  # 消息类型：image（图片）、file（文件）
                 'FileName': filename,  # 图片\文件名
@@ -119,8 +120,8 @@ while True:
     password = input("请输入密码：")
     data = {'op': 'register' if op == '1' else 'login', 'username': username, 'password': password, }
     if op == '1':
-        nickname = input("请输入昵称：")
-        data['nickname'] = nickname
+        nick = input("请输入昵称：")
+        data['nickname'] = nick
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((ip, PORT))
     print('成功连入服务器(' + ip + ')')
