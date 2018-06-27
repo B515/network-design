@@ -1,10 +1,10 @@
 客户端→服务端：
 	注册\登录（首次连接）：
 		{
-		'op':'register'  # 操作：register（注册），login（登录）
-		'username':'',  # 16位字符
-		'password':''  # 16位字符
-		'nickname':'',  # 16位字符，登录时不填
+		'Op':'register',  # 操作：register（注册），login（登录）
+		'Username':'',  # 16位字符
+		'Password':'',  # 16位字符
+		'Nickname':''  # 16位字符，登录时不填
 		}
 	发送消息：
 		{
@@ -33,10 +33,22 @@
 		'MsgID':12345678,  # 本次传输id，8位数字，需与首次发送id相同
 		'Content':'',  # 图片\文件内容，bytes，base64，utf-8，每次最大传输512
 		}
+	查看个人资料：
+		{
+		'MsgType':'system',
+		'Op':'view_inf'
+		}	
+	修改个人资料：
+		{
+		'MsgType':'system',
+		'Op':'update_inf',
+		'Nickname':'',  # 昵称，16位字符
+		'Sex':0  # 性别：0（女性），1（男性）
+		}
 服务端→客户端：
 	注册\登录响应（首次连接）：
 		{
-		'result':0  # 结果：0（登录成功）， 1（用户名或密码错误）， 2（注册成功）， 3（用户名重复）
+		'Result':0  # 结果：0（登录成功）， 1（用户名或密码错误）， 2（注册成功）， 3（用户名重复）
 		}
 	发送消息：
 		{
@@ -66,10 +78,38 @@
 		'MsgType':'image',  # 消息类型：image（图片）、file（文件）
 		'MsgID':12345678,  # 本次传输id，8位数字，需与首次发送id相同
 		'Content':'',  # 图片\文件内容，bytes，base64，utf-8，每次最大传输512
+	查看个人资料响应：
+		成功：
+		{
+		'MsgType':'system',
+		'Op':'update_inf',
+		'result':true
+		'Nickname':'',  # 昵称，16位字符
+		'Sex':0  # 性别：0（女性），1（男性）
+		}
+		失败：
+		{
+		'MsgType':'system',
+		'Op':'update_inf',
+		'Result':false
+		}
+	修改个人资料响应：
+		成功：
+		{
+		'MsgType':'system'
+		'Op':'view_inf'
+		'result':true
+		}
+		失败：
+		{
+		'MsgType':'system'
+		'Op':'view_inf'
+		'Result':false
+		}
 数据库：
 	{
 	Username char(16) Primary Key,
 	Password char(40) not null,
-	Nickname char(16) default '未命名',
+	Nickname char(16) default, '未命名',
 	Sex int(1) default 0
 	}

@@ -11,7 +11,7 @@ from collections import defaultdict
 from base64 import b64encode, b64decode
 
 
-def client_thread_in(conn, nick):
+def client_thread_in(conn, user):
     global data, online_user
     cf = conn.makefile('r', encoding=encoding)
     while True:
@@ -34,30 +34,43 @@ def client_thread_in(conn, nick):
                     threading.Thread(target=deal_file, args=(msg['MsgID'], msg['FileSize'])).start()
                 else:
                     data_file[msg['MsgID']].append(msg)
+            elif msg['MsgType'] == 'system':
+                if msg['Op'] == 'view_inf':
+                    r = UserDataManager().view_inf(user)
+                    if not r:
+                        t = {'MsgType': 'system', 'Op': 'view_inf', 'Result': r}
+                    else:
+                        t = {'MsgType': 'system', 'Op': 'view_inf', 'Result': True, 'Nickname': r[0][2],
+                             'Sex': r[0][3]}
+                    data[user].insert(0, t)
+                elif msg['Op'] == 'update_inf':
+                    r = UserDataManager().update_inf(user, msg['Nickname'], msg['Sex'])
+                    t = {'MsgType': 'system', 'Op': 'update_inf', 'Result': r}
+                    data[user].insert(0, t)
         except:
-            del online_user[nick]
+            del online_user[user]
             temp = {'Object': 'all', 'FromUser': 'system',
                     'CreateTime': time.strftime("%H:%M:%S", time.localtime()), 'MsgType': 'text',
-                    'Content': nick + ' 离开聊天室', 'OnlineUser': list(online_user.keys())}
+                    'Content': user + ' 离开聊天室', 'OnlineUser': list(online_user.keys())}
             print(temp['Content'])
             print('当前 ' + str(len(online_user.keys())) + ' 人在线')
             notify_all(temp)
             return
 
 
-def client_thread_out(conn, nick):
+def client_thread_out(conn, user):
     global data, online_user
     while True:
-        if nick not in online_user.keys():
+        if user not in online_user.keys():
             return
-        if len(data[nick]) > 0:
-            msg = data[nick][0].copy()
+        if len(data[user]) > 0:
+            msg = data[user][0].copy()
             msg['OnlineUser'] = list(online_user.keys())
             if msg['MsgType'] == 'text':
                 jmsg = json.dumps(msg) + '\n'
                 try:
                     conn.send(jmsg.encode(encoding))
-                    data[nick].pop(0)
+                    data[user].pop(0)
                 except:
                     return
             elif msg['MsgType'] == 'image' or msg['MsgType'] == 'file':
@@ -65,7 +78,14 @@ def client_thread_out(conn, nick):
                 try:
                     conn.send(jmsg.encode(encoding))
                     threading.Thread(target=deal_file_out, args=(conn, msg['MsgID'], msg['MsgType'])).start()
-                    data[nick].pop(0)
+                    data[user].pop(0)
+                except:
+                    return
+            elif msg['MsgType'] == 'system':
+                jmsg = json.dumps(msg) + '\n'
+                try:
+                    conn.send(jmsg.encode(encoding))
+                    data[user].pop(0)
                 except:
                     return
 
@@ -147,33 +167,33 @@ while True:
     try:
         jmsg = cf.readline()
         msg = json.loads(jmsg)
-        password_sha1 = hashlib.sha1(msg['password'].encode(encoding)).hexdigest()
-        if msg['op'] == 'register':
-            result = UserDataManager().register(msg['username'], password_sha1, msg['nickname'])
+        password_sha1 = hashlib.sha1(msg['Password'].encode(encoding)).hexdigest()
+        if msg['Op'] == 'register':
+            result = UserDataManager().register(msg['Username'], password_sha1, msg['Nickname'])
             if result == 2:
-                username = msg['username']
-                temp = {'result': result}
+                username = msg['Username']
+                temp = {'Result': result}
             else:
-                temp = {'result': result}
+                temp = {'Result': result}
                 jtemp = json.dumps(temp) + '\n'
                 conn.send(jtemp.encode(encoding))
                 continue
             jtemp = json.dumps(temp) + '\n'
             conn.send(jtemp.encode(encoding))
-        elif msg['op'] == 'login':
-            result = UserDataManager().login(msg['username'])
+        elif msg['Op'] == 'login':
+            result = UserDataManager().login(msg['Username'])
             if result == 1:
-                temp = {'result': result}
+                temp = {'Result': result}
                 jtemp = json.dumps(temp) + '\n'
                 conn.send(jtemp.encode(encoding))
                 continue
             else:
                 if password_sha1 == result[0][1]:
                     username = result[0][0]
-                    temp = {'result': 0}
+                    temp = {'Result': 0}
                 else:
                     print("密码错误")
-                    temp = {'result': 1}
+                    temp = {'Result': 1}
                     jtemp = json.dumps(temp) + '\n'
                     conn.send(jtemp.encode(encoding))
                     continue

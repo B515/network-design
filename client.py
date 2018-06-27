@@ -25,7 +25,7 @@ PORT = 8964
 def deal_out(sock):
     global username, outString
     while True:
-        cmd = input("请输入类型{0：文字，1：图片， 2：文件}：")
+        cmd = input("请输入类型{0：文字，1：图片， 2：文件, 3：查看个人资料, 4：修改个人资料}：")
         if cmd == '0':
             content = input()
             outString = content
@@ -47,6 +47,15 @@ def deal_out(sock):
             jmsg = json.dumps(msg) + '\n'
             sock.send(jmsg.encode(encoding))
             threading.Thread(target=deal_file, args=(sock, msg['MsgType'], msg['MsgID'], filename)).start()
+        elif cmd == '3':
+            msg = {'MsgType': 'system', 'Op': 'view_inf'}
+            jmsg = json.dumps(msg) + '\n'
+            sock.send(jmsg.encode(encoding))
+        elif cmd == '4':
+            msg = {'MsgType': 'system', 'Op': 'update_inf', 'Nickname': input("请输入新昵称："),
+                   'Sex': int(input("请输入新性别：{0（女性）， 1（男性）}；"))}
+            jmsg = json.dumps(msg) + '\n'
+            sock.send(jmsg.encode(encoding))
 
 
 def deal_in(sock):
@@ -69,6 +78,8 @@ def deal_in(sock):
                     threading.Thread(target=deal_file_in, args=(msg,)).start()
                 else:
                     data_file[msg['MsgID']].append(msg)
+            elif msg['MsgType'] == 'system':
+                print(msg)
         except:
             break
 
@@ -118,29 +129,29 @@ while True:
     op = input("请输入操作{0：登录，1：注册}：")
     username = input("请输入用户名：")
     password = input("请输入密码：")
-    data = {'op': 'register' if op == '1' else 'login', 'username': username, 'password': password, }
+    data = {'Op': 'register' if op == '1' else 'login', 'Username': username, 'Password': password, }
     if op == '1':
         nick = input("请输入昵称：")
-        data['nickname'] = nick
+        data['Nickname'] = nick
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((ip, PORT))
     print('成功连入服务器(' + ip + ')')
     jdata = json.dumps(data) + '\n'
     sock.send(jdata.encode(encoding))
 
-    jresult = sock.recv(20)
+    jresult = sock.recv(20).decode(encoding)
     result = json.loads(jresult)
 
-    if result['result'] == 0:
+    if result['Result'] == 0:
         print("登录成功")
         break
-    elif result['result'] == 2:
+    elif result['Result'] == 2:
         print("注册成功")
         break
-    elif result['result'] == 1:
+    elif result['Result'] == 1:
         print("用户名或密码错误")
         continue
-    elif result['result'] == 3:
+    elif result['Result'] == 3:
         print("用户名重复")
         continue
 

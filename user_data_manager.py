@@ -20,7 +20,6 @@ class UserDataManager:
         if len(results) == 0:
             cmd = "INSERT INTO userdata(Username, Password, Nickname) VALUES ('%s', '%s', '%s');" % (username, password, nickname)
             try:
-                self.cursor = self.db.cursor()
                 self.cursor.execute(cmd)
                 self.db.commit()
                 print(username + "注册成功")
@@ -35,7 +34,7 @@ class UserDataManager:
             return 3
 
     def login(self, username):
-        cmd = "SELECT * FROM userdata WHERE Username = '%s'" % (username)
+        cmd = "SELECT * FROM userdata WHERE Username = '%s';" % (username)
         try:
             self.cursor.execute(cmd)
             results = self.cursor.fetchall()
@@ -47,3 +46,32 @@ class UserDataManager:
         except:
             print(username + "用户名不存在")
             return 1
+
+    def update_inf(self, username, nickname, sex):
+        cmd1 = "update userdata set Nickname='%s' where Username='%s';" % (nickname,username)
+        cmd2 = "update userdata set Sex='%s' where Username='%s';" % (sex, username)
+        try:
+            self.cursor.execute(cmd1)
+            self.db.commit()
+            self.cursor.execute(cmd2)
+            self.db.commit()
+            print(username + "修改个人资料成功")
+            return True
+        except Exception as e:
+            self.db.rollback()
+            print(e)
+            print(username + "修改个人资料失败")
+            return False
+
+    def view_inf(self, username):
+        cmd = "SELECT * FROM userdata WHERE Username = '%s';" % (username)
+        try:
+            self.cursor.execute(cmd)
+            results = self.cursor.fetchall()
+            print(username + "查看个人资料成功")
+            return results
+        except Exception as e:
+            self.db.rollback()
+            print(e)
+            print(username + "查看个人资料失败")
+            return False
