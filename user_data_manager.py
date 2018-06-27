@@ -47,6 +47,16 @@ class UserDataManager:
             print(username + "用户名不存在")
             return 1
 
+    def view_user(self):
+        cmd = "SELECT username FROM userdata;"
+        try:
+            self.cursor.execute(cmd)
+            results = self.cursor.fetchall()
+            return [u[0] for u in results]
+        except:
+            print("显示用户列表失败")
+            return False
+
     def update_inf(self, username, nickname, sex):
         cmd1 = "update userdata set Nickname='%s' where Username='%s';" % (nickname,username)
         cmd2 = "update userdata set Sex='%s' where Username='%s';" % (sex, username)
@@ -74,4 +84,74 @@ class UserDataManager:
             self.db.rollback()
             print(e)
             print(username + "查看个人资料失败")
+            return False
+
+    def follow(self, user1, user2):
+        if user2 not in self.view_user():
+            print(user2 + "不存在")
+            return False
+        cmd = "SELECT * FROM friends WHERE user1 = '%s' and user2 = '%s';" % (user1, user2)
+        try:
+            self.cursor.execute(cmd)
+            results = self.cursor.fetchall()
+            if len(results) != 0:
+                print(user1 + "已关注" + user2)
+                return False
+            cmd = "INSERT INTO friends(user1, user2) VALUES ('%s', '%s');" % (user1, user2)
+            try:
+                self.cursor.execute(cmd)
+                self.db.commit()
+                print(user1 + "成功关注" + user2)
+                return True
+            except Exception as e:
+                self.db.rollback()
+                print(e)
+                print(user1 + "关注" + user2 + "失败")
+                return False
+        except Exception as e:
+            self.db.rollback()
+            print(e)
+            print(user1 + "关注" + user2 + "失败")
+            return False
+
+    def unfollow(self, user1, user2):
+        if user2 not in self.view_user():
+            print(user2 + "不存在")
+            return False
+        cmd = "delete from friends where user1='%s' and user2='%s';" % (user1, user2)
+        try:
+            self.cursor.execute(cmd)
+            self.db.commit()
+            print(user1 + "成功取消关注" + user2)
+            return True
+        except Exception as e:
+            self.db.rollback()
+            print(e)
+            print(user1 + "取消关注" + user2 + "失败")
+            return False
+
+    def following(self, user1):
+        cmd = "SELECT user2 FROM friends WHERE user1 = '%s';" % user1
+        try:
+            self.cursor.execute(cmd)
+            results = self.cursor.fetchall()
+            print(user1 + "查看关注的人成功")
+            return results
+        except Exception as e:
+            self.db.rollback()
+            print(e)
+            print(user1 + "查看关注的人失败")
+            return False
+
+    def follower(self, user1):
+        cmd = "SELECT user1 FROM friends WHERE user2 = '%s';" % user1
+        try:
+            self.cursor.execute(cmd)
+            results = self.cursor.fetchall()
+            print(user1 + "查看关注者成功")
+            return results
+        except Exception as e:
+            self.db.rollback()
+            print(e)
+            print(user1 + "查看关注者失败")
             return False

@@ -45,6 +45,28 @@
 		'Nickname':'',  # 昵称，16位字符
 		'Sex':0  # 性别：0（女性），1（男性）
 		}
+	关注：
+		{
+		'MsgType':'system',
+		'Op':'follow',
+		'User':''  # 被关注的人用户名
+		}	
+	取消关注：
+		{
+		'MsgType':'system',
+		'Op':'unfollow'
+		'User':''  # 被取消关注的人用户名
+		}
+	查看关注你的人：
+		{
+		'MsgType':'system',
+		'Op':'following'
+		}
+	查看关注者：
+		{
+		'MsgType':'system',
+		'Op':'follower'
+		}
 服务端→客户端：
 	注册\登录响应（首次连接）：
 		{
@@ -83,7 +105,7 @@
 		{
 		'MsgType':'system',
 		'Op':'update_inf',
-		'result':true
+		'Result':true
 		'Nickname':'',  # 昵称，16位字符
 		'Sex':0  # 性别：0（女性），1（男性）
 		}
@@ -98,13 +120,27 @@
 		{
 		'MsgType':'system'
 		'Op':'view_inf'
-		'result':true
+		'Result':true
 		}
 		失败：
 		{
 		'MsgType':'system'
 		'Op':'view_inf'
 		'Result':false
+		}
+	关注\取消关注响应：
+		{
+		'MsgType':'system',
+		'Op':'follow'\'unfollow',
+		'User':'',  # 被关注的人用户名
+		'Result':true\false
+		}	
+	查看关注了\关注者响应：
+		{
+		'MsgType':'system',
+		'Op':'following'\'folloer',
+		'UserList':[name1, name2,...],
+		'Result':true\false
 		}
 数据库：
 	{

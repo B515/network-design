@@ -25,7 +25,7 @@ PORT = 8964
 def deal_out(sock):
     global username, outString
     while True:
-        cmd = input("请输入类型{0：文字，1：图片， 2：文件, 3：查看个人资料, 4：修改个人资料}：")
+        cmd = input("请输入类型{0：文字，1：图片， 2：文件, 3：查看个人资料, 4：修改个人资料, 5：关注，6：取关，7：关注了，8：关注者}：")
         if cmd == '0':
             content = input()
             outString = content
@@ -54,6 +54,22 @@ def deal_out(sock):
         elif cmd == '4':
             msg = {'MsgType': 'system', 'Op': 'update_inf', 'Nickname': input("请输入新昵称："),
                    'Sex': int(input("请输入新性别：{0（女性）， 1（男性）}；"))}
+            jmsg = json.dumps(msg) + '\n'
+            sock.send(jmsg.encode(encoding))
+        elif cmd == '5':
+            msg = {'MsgType': 'system', 'Op': 'follow', 'User': input("请输入对方用户名：")}
+            jmsg = json.dumps(msg) + '\n'
+            sock.send(jmsg.encode(encoding))
+        elif cmd == '6':
+            msg = {'MsgType': 'system', 'Op': 'unfollow', 'User': input("请输入对方用户名：")}
+            jmsg = json.dumps(msg) + '\n'
+            sock.send(jmsg.encode(encoding))
+        elif cmd == '7':
+            msg = {'MsgType': 'system', 'Op': 'following'}
+            jmsg = json.dumps(msg) + '\n'
+            sock.send(jmsg.encode(encoding))
+        elif cmd == '8':
+            msg = {'MsgType': 'system', 'Op': 'follower'}
             jmsg = json.dumps(msg) + '\n'
             sock.send(jmsg.encode(encoding))
 

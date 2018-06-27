@@ -47,6 +47,36 @@ def client_thread_in(conn, user):
                     r = UserDataManager().update_inf(user, msg['Nickname'], msg['Sex'])
                     t = {'MsgType': 'system', 'Op': 'update_inf', 'Result': r}
                     data[user].insert(0, t)
+                elif msg['Op'] == 'follow':
+                    r = UserDataManager().follow(user, msg['User'])
+                    msg['Result'] = r
+                    data[user].insert(0, msg)
+                elif msg['Op'] == 'unfollow':
+                    r = UserDataManager().unfollow(user, msg['User'])
+                    msg['Result'] = r
+                    data[user].insert(0, msg)
+                elif msg['Op'] == 'following':
+                    r = UserDataManager().following(user)
+                    if len(r) == 0:
+                        msg['Result'] = True
+                        msg['UserList'] = r
+                    elif not r:
+                        msg['Result'] = r
+                    else:
+                        msg['Result'] = True
+                        msg['UserList'] = [u[0] for u in r]
+                    data[user].insert(0, msg)
+                elif msg['Op'] == 'follower':
+                    r = UserDataManager().follower(user)
+                    if len(r) == 0:
+                        msg['Result'] = True
+                        msg['UserList'] = r
+                    elif not r:
+                        msg['Result'] = r
+                    else:
+                        msg['Result'] = True
+                        msg['UserList'] = [u[0] for u in r]
+                    data[user].insert(0, msg)
         except:
             del online_user[user]
             temp = {'Object': 'all', 'FromUser': 'system',
