@@ -31,7 +31,7 @@ def client_thread_in(conn, user):
                 if msg['MsgID'] not in temp_file.keys():
                     temp_file[msg['MsgID']] = msg
                     data_file[msg['MsgID']] = []
-                    threading.Thread(target=deal_file, args=(msg['MsgID'], msg['FileSize'])).start()
+                    threading.Thread(target=deal_file, args=(msg['MsgID'], msg['FileSize'], user)).start()
                 else:
                     data_file[msg['MsgID']].append(msg)
             elif msg['MsgType'] == 'system':
@@ -90,6 +90,7 @@ def client_thread_in(conn, user):
 
 def client_thread_out(conn, user):
     global data, online_user
+    sending_file = []
     while True:
         if user not in online_user.keys():
             return
@@ -105,12 +106,23 @@ def client_thread_out(conn, user):
                     return
             elif msg['MsgType'] == 'image' or msg['MsgType'] == 'file':
                 jmsg = json.dumps(msg) + '\n'
-                try:
-                    conn.send(jmsg.encode(encoding))
-                    threading.Thread(target=deal_file_out, args=(conn, msg['MsgID'], msg['MsgType'])).start()
+                if msg['MsgID'] not in sending_file:
+                    try:
+                        sending_file.append(msg['MsgID'])
+                        conn.send(jmsg.encode(encoding))
+                        threading.Thread(target=deal_file_out, args=(msg['MsgID'], msg['MsgType'], user)).start()
+                        data[user].pop(0)
+                    except:
+                        return
+                elif msg['Status'] == 'Finished':
+                    sending_file.remove(msg['MsgID'])
                     data[user].pop(0)
-                except:
-                    return
+                else:
+                    try:
+                        conn.send(jmsg.encode(encoding))
+                        data[user].pop(0)
+                    except:
+                        return
             elif msg['MsgType'] == 'system':
                 jmsg = json.dumps(msg) + '\n'
                 try:
@@ -129,9 +141,9 @@ def notify_all(msg):
             data[user].append(temp)
 
 
-def deal_file(f_id, f_size):
+def deal_file(f_id, f_size, user):
     global temp_file, data_file, data
-    print("创建" + str(f_id) + "文件接受线程")
+    print("创建" + str(f_id) + "文件接收线程")
     recv_size = 0
     filename = os.path.join('./temp/', str(f_id))
     fp = open(filename, 'wb')
@@ -144,6 +156,13 @@ def deal_file(f_id, f_size):
                 recv_size = f_size
             fp.write(temp)
             data_file[f_id].pop(0)
+        if user not in online_user.keys():
+            fp.close()
+            os.remove(filename)
+            del temp_file[f_id]
+            del data_file[f_id]
+            print("接收" + str(f_id) + "文件失败")
+            return
     fp.close()
     if temp_file[f_id]['Object'] == 'all':
         notify_all(temp_file[f_id])
@@ -151,25 +170,36 @@ def deal_file(f_id, f_size):
         data[temp_file[f_id]['ToUser']].append(temp_file[f_id])
     del temp_file[f_id]
     del data_file[f_id]
-    print("结束" + str(f_id) + "文件接受线程")
+    print("结束" + str(f_id) + "文件接收线程")
     return
 
 
-def deal_file_out(conn, msg_id, msg_type):
+def deal_file_out(msg_id, msg_type, user):
+    global data
     print("创建" + str(msg_id) + "文件发送线程")
     fp = open("./temp/" + str(msg_id), "rb")
     while True:
-        data = b64encode(fp.read(8192)).decode(encoding)
-        if not data:
+        if user not in online_user.keys():
+            fp.close()
+            print("发送" + str(msg_id) + "文件失败")
+            return
+        text = b64encode(fp.read(8192)).decode(encoding)
+        if not text:
+            msg = {
+                'MsgType': msg_type,  # 消息类型：image（图片）、file（文件）
+                'MsgID': msg_id,  # 本次传输id，8位数字，需与首次发送id相同
+                'Status': 'Finished'
+            }
+            data[user].append(msg)
             print("发送完毕")
             break
         msg = {
             'MsgType': msg_type,  # 消息类型：image（图片）、file（文件）
             'MsgID': msg_id,  # 本次传输id，8位数字，需与首次发送id相同
-            'Content': data  # 图片\文件内容，每次最大传输8192
+            'Content': text,  # 图片\文件内容，每次最大传输8192
+            'Status': 'Unfinished'
         }
-        jmsg = json.dumps(msg) + '\n'
-        conn.send(jmsg.encode(encoding))
+        data[user].append(msg)
     fp.close()
     print("结束" + str(msg_id) + "文件发送线程")
     return
