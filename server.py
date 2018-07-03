@@ -18,6 +18,14 @@ def client_thread_in(conn, user):
         try:
             jmsg = cf.readline()
             if not jmsg:
+                if user in online_user.keys():
+                    del online_user[user]
+                    temp = {'Object': 'all', 'FromUser': 'system',
+                            'CreateTime': time.strftime("%H:%M:%S", time.localtime()), 'MsgType': 'text',
+                            'Content': user + ' 离开聊天室', 'OnlineUser': list(online_user.keys())}
+                    print(temp['Content'])
+                    print('当前 ' + str(len(online_user.keys())) + ' 人在线')
+                    notify_all(temp)
                 conn.close()
                 return
             msg = json.loads(jmsg)
@@ -77,6 +85,16 @@ def client_thread_in(conn, user):
                         msg['Result'] = True
                         msg['UserList'] = [u[0] for u in r]
                     data[user].insert(0, msg)
+                elif msg['Op'] == 'close':
+                    del online_user[user]
+                    temp = {'Object': 'all', 'FromUser': 'system',
+                            'CreateTime': time.strftime("%H:%M:%S", time.localtime()), 'MsgType': 'text',
+                            'Content': user + ' 离开聊天室', 'OnlineUser': list(online_user.keys())}
+                    print(temp['Content'])
+                    print('当前 ' + str(len(online_user.keys())) + ' 人在线')
+                    notify_all(temp)
+                    conn.close()
+                    return
         except:
             del online_user[user]
             temp = {'Object': 'all', 'FromUser': 'system',

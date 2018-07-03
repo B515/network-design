@@ -1,4 +1,4 @@
-﻿客户端→服务端：
+客户端→服务端：
 	注册\登录（首次连接）：
 		{
 		'Op':'register',  # 操作：register（注册），login（登录）
@@ -104,7 +104,7 @@
 		成功：
 		{
 		'MsgType':'system',
-		'Op':'view_inf',
+		'Op':'update_inf',
 		'Result':true
 		'Nickname':'',  # 昵称，16位字符
 		'Sex':0  # 性别：0（女性），1（男性）
@@ -112,20 +112,20 @@
 		失败：
 		{
 		'MsgType':'system',
-		'Op':'view_inf',
+		'Op':'update_inf',
 		'Result':false
 		}
 	修改个人资料响应：
 		成功：
 		{
 		'MsgType':'system'
-		'Op':'update_inf'
+		'Op':'view_inf'
 		'Result':true
 		}
 		失败：
 		{
 		'MsgType':'system'
-		'Op':'update_inf'
+		'Op':'view_inf'
 		'Result':false
 		}
 	关注\取消关注响应：
