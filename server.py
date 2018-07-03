@@ -167,7 +167,11 @@ def deal_file(f_id, f_size, user):
     fp = open(filename, 'wb')
     while not recv_size == f_size:
         if len(data_file[f_id]) > 0:
-            temp = b64decode(data_file[f_id][0]['Content'])
+            try:
+                temp = b64decode(data_file[f_id][0]['Content'])
+            except:
+                data_file[f_id].pop(0)
+                continue
             if f_size - recv_size > 8192:
                 recv_size += len(temp)
             else:
